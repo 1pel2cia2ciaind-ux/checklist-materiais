@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Conferência de Materiais</title>
+  <style>
+    /* Estilização da Página */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Estilo dos Cards de Relatório */
+    .card {
+      background: white;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Cor da borda para status OK */
+    .sem-alteracao {
+      border-left: 6px solid #28a745;
+    }
+
+    /* Cor da borda para status de Material Faltante */
+    .com-falta {
+      border-left: 6px solid #dc3545;
+    }
+
+    .card h3 {
+      margin: 0 0 10px 0;
+      color: #444;
+    }
+
+    .data {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .status-ok {
+      color: #28a745;
+    }
+
+    .status-falta {
+      color: #dc3545;
+    }
+
+    #carregando {
+      text-align: center;
+      font-size: 1.2em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Conferência de Materiais</h1>
+    <div id="painel">
+      <div id="carregando">Carregando históricos...</div>
+    </div>
+  </div>
+
+  <script>
+    // Cole aqui a URL que você copiou no Passo 1
+    const API_URL = "https://script.google.com/macros/s/AKfycbyW46yoUS-Ij_oCbPd_SRgYTisJ06cNSfNG7D0CJA-8rqMV9x47j3Kf6KIDEB3UH-IW/exec";
+
+    function carregarDados() {
+      fetch(API_URL)
+        .then(resposta => resposta.json())
+        .then(dados => {
+          const container = document.getElementById("painel");
+          container.innerHTML = ""; // Limpa a mensagem de carregando
+
+          if (dados.length === 0) {
+            container.innerHTML = "<p style='text-align:center;'>Nenhum registro encontrado.</p>";
+            return;
+          }
+
+          // Exibe do mais recente para o mais antigo (reverse)
+          dados.reverse().forEach(item => {
+            const ehSemAlteracao = item.materiais === "SEM ALTERAÇÕES";
+
+            const card = document.createElement("div");
+            card.className = `card ${ehSemAlteracao ? 'sem-alteracao' : 'com-falta'}`;
+
+            card.innerHTML = `
+              <h3>${item.formulario}</h3>
+              <div class="data"><strong>Data/Hora:</strong> ${new Date(item.data).toLocaleString('pt-BR')}</div>
+              <div class="status ${ehSemAlteracao ? 'status-ok' : 'status-falta'}">
+                ${ehSemAlteracao ? '✅ SEM ALTERAÇÕES' : '⚠️ MATERIAIS FALTANTES:'}
+              </div>
+              ${!ehSemAlteracao ? `<p>${item.materiais}</p>` : ''}
+            `;
+
+            container.appendChild(card);
+          });
+        })
+        .catch(erro => {
+          console.error("Erro ao carregar dados:", erro);
+          document.getElementById("painel").innerHTML = "<p style='text-align:center; color:red;'>Erro ao carregar os dados.</p>";
+        });
+    }
+
+    // Carrega os dados assim que a página abre
+    carregarDados();
+  </script>
+</body>
+</html>
