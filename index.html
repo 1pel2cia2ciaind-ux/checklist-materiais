@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Conferência de Materiais</title>
   <style>
-    /* Estilização da Página */
+    /* Estilo Geral - Preto e Roxo */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f0f2f5;
+      background-color: #0f0c1b; /* Fundo escuro levemente roxo */
+      color: #e0e0e0;
       margin: 0;
       padding: 20px;
     }
 
     h1 {
       text-align: center;
-      color: #333;
+      color: #bb86fc; /* Roxo claro brilhante */
+      margin-bottom: 25px;
+      font-weight: 600;
     }
 
     .container {
@@ -23,57 +26,103 @@
       margin: 0 auto;
     }
 
-    /* Estilo dos Cards de Relatório */
-    .card {
-      background: white;
-      padding: 15px 20px;
-      margin-bottom: 15px;
+    /* Área do Filtro */
+    .filtro-container {
+      margin-bottom: 25px;
+      text-align: center;
+      background: #1d1830; /* Roxo bem escuro */
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid #342a54;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .filtro-container label {
+      color: #d1c4e9;
+      margin-right: 8px;
+    }
+
+    select {
+      padding: 10px 14px;
+      font-size: 0.95rem;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: transform 0.2s;
+      border: 1px solid #bb86fc;
+      background-color: #0f0c1b;
+      color: #ffffff;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    select:focus {
+      border-color: #9d4edd;
+      box-shadow: 0 0 8px rgba(187, 134, 252, 0.4);
+    }
+
+    /* Cards */
+    .card {
+      background: #181328;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      border: 1px solid #2a2244;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .card:hover {
       transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(157, 78, 221, 0.15);
     }
 
-    /* Cor da borda para status OK */
+    /* Status e Destaques */
     .sem-alteracao {
-      border-left: 6px solid #28a745;
+      border-left: 6px solid #00e676; /* Verde neon */
     }
 
-    /* Cor da borda para status de Material Faltante */
     .com-falta {
-      border-left: 6px solid #dc3545;
+      border-left: 6px solid #ff5252; /* Vermelho/Rosa escuro */
     }
 
     .card h3 {
       margin: 0 0 10px 0;
-      color: #444;
+      color: #e0aaff; /* Roxo suave */
+      font-size: 1.2rem;
     }
 
     .data {
-      font-size: 0.9em;
-      color: #666;
+      font-size: 0.88em;
+      color: #a097bd;
     }
 
     .status {
-      margin-top: 10px;
-      font-weight: bold;
+      margin-top: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
     }
 
     .status-ok {
-      color: #28a745;
+      color: #00e676;
     }
 
     .status-falta {
-      color: #dc3545;
+      color: #ff5252;
+    }
+
+    .card p {
+      background: #241c3c;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+      border-left: 3px solid #ff5252;
+      color: #f3e5f5;
     }
 
     #carregando {
       text-align: center;
-      font-size: 1.2em;
-      color: #666;
+      font-size: 1.1em;
+      color: #bb86fc;
+      padding: 30px 0;
     }
   </style>
 </head>
@@ -81,53 +130,106 @@
 
   <div class="container">
     <h1>Conferência de Materiais</h1>
+
+    <!-- Menu Filtro -->
+    <div class="filtro-container">
+      <label for="filtroForm"><strong>Filtrar por Formulário: </strong></label>
+      <select id="filtroForm" onchange="filtrarDados()">
+        <option value="TODOS">Exibir Todos</option>
+      </select>
+    </div>
+
     <div id="painel">
       <div id="carregando">Carregando históricos...</div>
     </div>
   </div>
 
   <script>
-    // Cole aqui a URL que você copiou no Passo 1
+    // ⬇️ ATENÇÃO: COLE SUA URL DO APPS SCRIPT ENTRE AS ASPAS ABAIXO ⬇️
     const API_URL = "https://script.google.com/macros/s/AKfycbyW46yoUS-Ij_oCbPd_SRgYTisJ06cNSfNG7D0CJA-8rqMV9x47j3Kf6KIDEB3UH-IW/exec";
 
+    let relatoriosGlobais = [];
+
     function carregarDados() {
+      if (API_URL === "SUA_URL_DO_APPS_SCRIPT_AQUI" || !API_URL) {
+        document.getElementById("painel").innerHTML = "<p style='text-align:center; color:#ff5252;'><strong>Erro:</strong> Substitua 'SUA_URL_DO_APPS_SCRIPT_AQUI' pela sua URL real da API no arquivo HTML.</p>";
+        return;
+      }
+
       fetch(API_URL)
         .then(resposta => resposta.json())
         .then(dados => {
-          const container = document.getElementById("painel");
-          container.innerHTML = ""; // Limpa a mensagem de carregando
-
-          if (dados.length === 0) {
-            container.innerHTML = "<p style='text-align:center;'>Nenhum registro encontrado.</p>";
-            return;
-          }
-
-          // Exibe do mais recente para o mais antigo (reverse)
-          dados.reverse().forEach(item => {
-            const ehSemAlteracao = item.materiais === "SEM ALTERAÇÕES";
-
-            const card = document.createElement("div");
-            card.className = `card ${ehSemAlteracao ? 'sem-alteracao' : 'com-falta'}`;
-
-            card.innerHTML = `
-              <h3>${item.formulario}</h3>
-              <div class="data"><strong>Data/Hora:</strong> ${new Date(item.data).toLocaleString('pt-BR')}</div>
-              <div class="status ${ehSemAlteracao ? 'status-ok' : 'status-falta'}">
-                ${ehSemAlteracao ? '✅ SEM ALTERAÇÕES' : '⚠️ MATERIAIS FALTANTES:'}
-              </div>
-              ${!ehSemAlteracao ? `<p>${item.materiais}</p>` : ''}
-            `;
-
-            container.appendChild(card);
-          });
+          relatoriosGlobais = dados;
+          preencherOpcoesFiltro(dados);
+          exibirRelatorios(dados);
         })
         .catch(erro => {
           console.error("Erro ao carregar dados:", erro);
-          document.getElementById("painel").innerHTML = "<p style='text-align:center; color:red;'>Erro ao carregar os dados.</p>";
+          document.getElementById("painel").innerHTML = "<p style='text-align:center; color:#ff5252;'>Erro ao carregar os dados da planilha. Verifique a URL do script.</p>";
         });
     }
 
-    // Carrega os dados assim que a página abre
+    function preencherOpcoesFiltro(dados) {
+      const select = document.getElementById("filtroForm");
+      select.innerHTML = '<option value="TODOS">Exibir Todos</option>';
+      
+      const formulariosUnicos = [...new Set(dados.map(item => item.formulario))];
+      
+      formulariosUnicos.forEach(nomeForm => {
+        if (nomeForm) {
+          const option = document.createElement("option");
+          option.value = nomeForm;
+          option.textContent = nomeForm;
+          select.appendChild(option);
+        }
+      });
+    }
+
+    function formatarData(dataRaw) {
+      if (!dataRaw) return "Data não informada";
+      const d = new Date(dataRaw);
+      return isNaN(d.getTime()) ? String(dataRaw) : d.toLocaleString('pt-BR');
+    }
+
+    function exibirRelatorios(lista) {
+      const container = document.getElementById("painel");
+      container.innerHTML = "";
+
+      if (!lista || lista.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#a097bd;'>Nenhum registro encontrado.</p>";
+        return;
+      }
+
+      lista.forEach(item => {
+        const ehSemAlteracao = String(item.materiais).toUpperCase() === "SEM ALTERAÇÕES";
+
+        const card = document.createElement("div");
+        card.className = `card ${ehSemAlteracao ? 'sem-alteracao' : 'com-falta'}`;
+
+        card.innerHTML = `
+          <h3>${item.formulario || 'Formulário'}</h3>
+          <div class="data"><strong>Data/Hora:</strong> ${formatarData(item.data)}</div>
+          <div class="status ${ehSemAlteracao ? 'status-ok' : 'status-falta'}">
+            ${ehSemAlteracao ? '✅ SEM ALTERAÇÕES' : '⚠️ MATERIAIS FALTANTES:'}
+          </div>
+          ${!ehSemAlteracao ? `<p>${item.materiais}</p>` : ''}
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function filtrarDados() {
+      const valorSelecionado = document.getElementById("filtroForm").value;
+      
+      if (valorSelecionado === "TODOS") {
+        exibirRelatorios(relatoriosGlobais);
+      } else {
+        const filtrados = relatoriosGlobais.filter(item => item.formulario === valorSelecionado);
+        exibirRelatorios(filtrados);
+      }
+    }
+
     carregarDados();
   </script>
 </body>
